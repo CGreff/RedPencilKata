@@ -9,6 +9,9 @@ import org.junit.Test
 
 import java.time.LocalDate
 import java.time.Month
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
 
 /**
  * General tests for the Red Pencil Promotion kata as a whole.
@@ -21,11 +24,14 @@ class KataTest {
     private static final String DEPROMOTED_ITEM_NAME = 'depromoted item'
     private static final LocalDate TODAY = LocalDate.of(2000, Month.MAY, 1)
 
+    private ScheduledExecutorService executorService
+
     @Before
     void setUp() {
+        executorService = Mock(ScheduledExecutorService)
         shoppingPortal = new ShoppingPortal(
                 priceChanger: new PriceChanger(),
-
+                executorService: executorService,
                 items: [
                         "$ITEM_NAME" : new Item(
                                 name: ITEM_NAME,
@@ -107,7 +113,9 @@ class KataTest {
 
     @Test
     void 'should stop a promotion when 30 days end'() {
+        ScheduledFuture scheduledFuture = mock(ScheduledFuture)
         mockTodaysDate(TODAY.plusDays(31))
+        executorService.scheduleAtFixedRate(match { true }, match { true }, match { true }, match { true }).returns(scheduledFuture)
         assertPromotionStatus(shoppingPortal.getItem(PROMOTED_ITEM_NAME), false, TODAY.plusDays(30))
     }
 
