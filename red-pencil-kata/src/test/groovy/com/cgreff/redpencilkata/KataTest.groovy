@@ -25,6 +25,7 @@ class KataTest {
     void setUp() {
         shoppingPortal = new ShoppingPortal(
                 priceChanger: new PriceChanger(),
+
                 items: [
                         "$ITEM_NAME" : new Item(
                                 name: ITEM_NAME,
@@ -102,6 +103,12 @@ class KataTest {
         mockTodaysDate(TODAY.minusDays(20))
         shoppingPortal.changePrice(ITEM, 0.80)
         assertPromotionStatus(shoppingPortal.getItem(ITEM_NAME), false, TODAY.minusDays(31))
+    }
+
+    @Test
+    void 'should stop a promotion when 30 days end'() {
+        mockTodaysDate(TODAY.plusDays(31))
+        assertPromotionStatus(shoppingPortal.getItem(PROMOTED_ITEM_NAME), false, TODAY.plusDays(30))
     }
 
     private void assertPromotionStatus(Item item, boolean promotionStatus, LocalDate promotionEnd) {
