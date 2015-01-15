@@ -1,0 +1,31 @@
+apply plugin: 'base'
+
+group   = 'com.cgreff'
+version = '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+apply plugin: 'groovy'
+tasks.withType(GroovyCompile) {
+    groovyOptions.optimizationOptions.indy = true
+    options.fork = true
+    options.encoding = 'UTF-8'
+    options.verbose = true
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+}
+
+dependencies {
+    testCompile (
+            [group: 'junit', name: 'junit', version: '4.11'],
+    )
+    testCompile (group: 'org.gmock', name: 'gmock', version: '0.8.3') {
+        exclude module: 'groovy-all'
+    }
+
+    compile(
+            [group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.3.6', classifier: 'indy']
+    )
+}

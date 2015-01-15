@@ -1,0 +1,3 @@
+rootProject.name = 'RedPencilKata'
+include 'red-pencil-kata'
+
