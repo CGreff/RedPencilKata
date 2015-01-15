@@ -47,7 +47,7 @@ class KataTest {
                         "$DEPROMOTED_ITEM_NAME" : new Item(
                                 name: ITEM_NAME,
                                 price: new Price(
-                                        price: 0.80,
+                                        price: 1.00,
                                         lastPrice: 1.00,
                                         lastModified: TODAY.minusDays(30),
                                         promotionFinished: TODAY,
@@ -92,14 +92,16 @@ class KataTest {
 
     @Test
     void 'should not start a red pencil promotion for an item that has its price decreased within 30 days of a prior promotion\'s end'() {
-
-        assertPromotionStatus(shoppingPortal.getItem(ITEM_NAME), false, TODAY)
+        mockTodaysDate(TODAY.plusDays(10))
+        shoppingPortal.changePrice(DEPROMOTED_ITEM_NAME, 0.80)
+        assertPromotionStatus(shoppingPortal.getItem(DEPROMOTED_ITEM_NAME), false, TODAY)
     }
 
     @Test
     void 'should not start a red pencil promotion when an item has its price decreased and it has not been stable for 30 days'() {
-
-        assertPromotionStatus(shoppingPortal.getItem(ITEM_NAME), false, TODAY)
+        mockTodaysDate(TODAY.minusDays(20))
+        shoppingPortal.changePrice(ITEM, 0.80)
+        assertPromotionStatus(shoppingPortal.getItem(ITEM_NAME), false, TODAY.minusDays(31))
     }
 
     private void assertPromotionStatus(Item item, boolean promotionStatus, LocalDate promotionEnd) {
