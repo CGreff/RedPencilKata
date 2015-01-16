@@ -14,7 +14,7 @@ The scope of the Code Kata is the implementations of the rules for activation an
 * A red pencil promotion lasts 30 days as the maximum length.
 * If the price is further reduced during the red pencil promotion the promotion will not be prolonged by that reduction.
 * If the price is increased during the red pencil promotion the promotion will be ended immediately.
-* If the price if reduced during the red pencil promotion so that the overall reduction is more than 30% with regard to the original price, the promotion is ended immediately.
+* If the price is reduced during the red pencil promotion so that the overall reduction is more than 30% with regard to the original price, the promotion is ended immediately.
 * After a red pencil promotion is ended additional red pencil promotions may follow – as long as the start condition is valid: the price was stable for 30 days and these 30 days don’t intersect with a previous red pencil promotion.
 
 ## Assumptions ##
@@ -30,3 +30,13 @@ Some assumptions must be made because requirements are never perfect and there e
 * Items can be uniquely identified by some value (I chose its name).
 * The duration will only care about 30 *days* inclusive, and not that 30 * 24 hours have passed since the reduction.
 * More may come if I encounter them..
+
+## Note ##
+
+I got kind of carried away and didn't commit things incrementally because I left stuff in various states of broken throughout my dev process.
+I will admit I cheated on the TDD thing a bit when I had the (unbrilliant) idea to use a ScheduledExecutorService to automatically
+demote items after their expiry periods. My brain wasn't having a lot of fun figuring out how to write good tests for that without mocking
+integral pieces of the business logic, so I just started writing it and put off the test for that later.
+
+Well, the rest sort of came out too. Fortunately I thought better of the executor service bit. 
+Something about tying each promoted item to a thread didn't sit right with me.

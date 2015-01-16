@@ -1,128 +1,98 @@
 package com.cgreff.redpencilkata
 
 import com.cgreff.redpencilkata.models.Item
-import com.cgreff.redpencilkata.models.Price
-import com.cgreff.redpencilkata.storefront.PriceChanger
+import com.cgreff.redpencilkata.client.PriceChanger
 import com.cgreff.redpencilkata.storefront.ShoppingPortal
+import com.cgreff.redpencilkata.data.ItemStore
 import org.junit.Before
 import org.junit.Test
 
 import java.time.LocalDate
 import java.time.Month
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ScheduledFuture
 
 /**
- * General tests for the Red Pencil Promotion kata as a whole.
+ * General tests for the Red Pencil Promotion kata as a whole. Nothing mocked except the date.
  */
 class KataTest {
 
-    private ShoppingPortal shoppingPortal
-    private static final String ITEM_NAME = 'item'
-    private static final String PROMOTED_ITEM_NAME = 'promoted item'
-    private static final String DEPROMOTED_ITEM_NAME = 'depromoted item'
-    private static final LocalDate TODAY = LocalDate.of(2000, Month.MAY, 1)
+    static final String ITEM_NAME = 'item'
+    static final LocalDate TODAY = LocalDate.of(2000, Month.MAY, 1)
 
-    private ScheduledExecutorService executorService
+    ShoppingPortal shoppingPortal
+    ItemStore itemStore
+    PriceChanger priceChanger
+
 
     @Before
     void setUp() {
-        executorService = Mock(ScheduledExecutorService)
-        shoppingPortal = new ShoppingPortal(
-                priceChanger: new PriceChanger(),
-                executorService: executorService,
-                items: [
-                        "$ITEM_NAME" : new Item(
-                                name: ITEM_NAME,
-                                price: new Price(
-                                        price: 1.00,
-                                        lastPrice: 1.00,
-                                        lastModified: TODAY.minusDays(31),
-                                        promotionFinished: TODAY.minusDays(31),
-                                        isPromoted: false
-                                )),
-                        "$PROMOTED_ITEM_NAME" : new Item(
-                                name: ITEM_NAME,
-                                price: new Price(
-                                        price: 0.80,
-                                        lastPrice: 1.00,
-                                        lastModified: TODAY,
-                                        promotionFinished: TODAY.plusDays(30),
-                                        isPromoted: true
-                                )),
-                        "$DEPROMOTED_ITEM_NAME" : new Item(
-                                name: ITEM_NAME,
-                                price: new Price(
-                                        price: 1.00,
-                                        lastPrice: 1.00,
-                                        lastModified: TODAY.minusDays(30),
-                                        promotionFinished: TODAY,
-                                        isPromoted: false
-                                ))
-                ]
-        )
-
+        itemStore = new ItemStore()
+        itemStore.putItem(new Item (name: ITEM_NAME, price: 1.00, lastModified: TODAY.minusDays(31)))
+        priceChanger = new PriceChanger(itemStore)
+        shoppingPortal = new ShoppingPortal(itemStore)
         mockTodaysDate(TODAY)
     }
 
     @Test
     void 'should start a red pencil promotion when an item is discounted by 20% for the first time'() {
-        shoppingPortal.changePrice(ITEM_NAME, 0.80)
-        assertPromotionStatus(shoppingPortal.getItem(ITEM_NAME), true, TODAY.plusDays(30))
+        promoteItem()
     }
 
     @Test
     void 'should not extend a red pencil promotion when an item is discounted twice within 30 days'() {
+        promoteItem()
+        LocalDate promotionEndDate = itemStore.getItem(ITEM_NAME).promotion.promotionFinished
         mockTodaysDate(TODAY.plusDays(10))
-        shoppingPortal.changePrice(PROMOTED_ITEM_NAME, 0.75)
-        assertPromotionStatus(shoppingPortal.getItem(PROMOTED_ITEM_NAME), true, TODAY.plusDays(30))
+        priceChanger.updatePrice(ITEM_NAME, 0.75)
+        assert shoppingPortal.getItem(ITEM_NAME).promotion.promotionFinished == promotionEndDate
     }
 
     @Test
     void 'should end a red pencil promotion when an item has its price increased'() {
-        shoppingPortal.changePrice(PROMOTED_ITEM_NAME, 1.25)
-        assertPromotionStatus(shoppingPortal.getItem(PROMOTED_ITEM_NAME), false, TODAY)
+        promoteItem()
+        priceChanger.updatePrice(ITEM_NAME, 0.85)
+        assert !shoppingPortal.getItem(ITEM_NAME).promotion
     }
 
     @Test
     void 'should end a red pencil promotion when an item has its price decreased below 30% of the original price'() {
-        shoppingPortal.changePrice(PROMOTED_ITEM_NAME, 0.69)
-        assertPromotionStatus(shoppingPortal.getItem(PROMOTED_ITEM_NAME), false, TODAY)
+        promoteItem()
+        priceChanger.updatePrice(ITEM_NAME, 0.69)
+        assert !shoppingPortal.getItem(ITEM_NAME).promotion
     }
 
     @Test
     void 'should not end a red pencil promotion when an item has its price decreased to 30% of the original price'() {
-        shoppingPortal.changePrice(PROMOTED_ITEM_NAME, 0.70)
-        assertPromotionStatus(shoppingPortal.getItem(PROMOTED_ITEM_NAME), true, TODAY.plusDays(30))
+        promoteItem()
+        priceChanger.updatePrice(ITEM_NAME, 0.7)
+        assert shoppingPortal.getItem(ITEM_NAME).promotion
     }
 
     @Test
-    void 'should not start a red pencil promotion for an item that has its price decreased within 30 days of a prior promotion\'s end'() {
+    void 'should not start a red pencil promotion for an item that has its price decreased within 30 days of a prior promotions end'() {
+        promoteItem()
+        priceChanger.updatePrice(ITEM_NAME, 1.0)
         mockTodaysDate(TODAY.plusDays(10))
-        shoppingPortal.changePrice(DEPROMOTED_ITEM_NAME, 0.80)
-        assertPromotionStatus(shoppingPortal.getItem(DEPROMOTED_ITEM_NAME), false, TODAY)
+        priceChanger.updatePrice(ITEM_NAME, 0.9)
+        assert !shoppingPortal.getItem(ITEM_NAME).promotion
     }
 
     @Test
     void 'should not start a red pencil promotion when an item has its price decreased and it has not been stable for 30 days'() {
-        mockTodaysDate(TODAY.minusDays(20))
-        shoppingPortal.changePrice(ITEM, 0.80)
-        assertPromotionStatus(shoppingPortal.getItem(ITEM_NAME), false, TODAY.minusDays(31))
+        mockTodaysDate(TODAY.minusDays(10))
+        priceChanger.updatePrice(ITEM_NAME, 0.9)
+        assert !shoppingPortal.getItem(ITEM_NAME).promotion
     }
 
     @Test
     void 'should stop a promotion when 30 days end'() {
-        ScheduledFuture scheduledFuture = mock(ScheduledFuture)
+        promoteItem()
         mockTodaysDate(TODAY.plusDays(31))
-        executorService.scheduleAtFixedRate(match { true }, match { true }, match { true }, match { true }).returns(scheduledFuture)
-        assertPromotionStatus(shoppingPortal.getItem(PROMOTED_ITEM_NAME), false, TODAY.plusDays(30))
+        assert !shoppingPortal.getItem(ITEM_NAME).promotion
     }
 
-    private void assertPromotionStatus(Item item, boolean promotionStatus, LocalDate promotionEnd) {
-        Price price = item.price
-        assert price.isPromoted == promotionStatus
-        assert price.promotionFinished == promotionEnd
+    private void promoteItem() {
+        priceChanger.updatePrice(ITEM_NAME, 0.8)
+        assert shoppingPortal.getItem(ITEM_NAME).promotion
     }
 
     private void mockTodaysDate(LocalDate date) {

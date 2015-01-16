@@ -1,6 +1,11 @@
 package com.cgreff.redpencilkata
 
+import com.cgreff.redpencilkata.client.PriceChanger
+import com.cgreff.redpencilkata.models.Item
 import com.cgreff.redpencilkata.storefront.ShoppingPortal
+import com.cgreff.redpencilkata.data.ItemStore
+
+import java.time.LocalDate
 
 /**
  * A main class for the Red Pencil Kata. Though it should be noted that really all of the
@@ -8,9 +13,12 @@ import com.cgreff.redpencilkata.storefront.ShoppingPortal
  */
 class Kata {
 
-    private static final ShoppingPortal SHOPPING_PORTAL = new ShoppingPortal()
-
     public static void main(String[] args) {
-        System.out.println("For now I'm a helpless main class!")
+        ItemStore itemStore = new ItemStore()
+        PriceChanger priceChanger = new PriceChanger(itemStore)
+        ShoppingPortal shoppingPortal = new ShoppingPortal(itemStore)
+
+        itemStore.putItem(new Item(name: "item", price: 1.00, lastModified: LocalDate.now()))
+
     }
 }

@@ -1,11 +1,36 @@
 package com.cgreff.redpencilkata.storefront
 
-import com.cgreff.redpencilkata.models.Item
+import com.cgreff.redpencilkata.models.CanonicalItem
+import com.cgreff.redpencilkata.data.ItemStore
+
+import java.time.LocalDate
 
 /**
- * Represents a list of items and the PriceChanger.
+ * Represents the user-facing Shopping Portal. Effectively just an interface to the ItemStore.
  */
 class ShoppingPortal {
-    PriceChanger priceChanger
-    Map<String, Item> items
+
+    ItemStore itemStore
+
+    ShoppingPortal(ItemStore itemStore) {
+        this.itemStore = itemStore
+    }
+
+    CanonicalItem getItem(String itemName) {
+        CanonicalItem canonicalItem = itemStore.getItem(itemName)
+        if (canonicalItem.promotion && promotionIsExpired(canonicalItem)) {
+            demoteItem(canonicalItem)
+            canonicalItem = itemStore.getItem(itemName)
+        }
+
+        canonicalItem
+    }
+
+    private boolean promotionIsExpired(CanonicalItem item) {
+        !item.promotion.promotionFinished.isAfter(LocalDate.now())
+    }
+
+    private void demoteItem(CanonicalItem item) {
+        itemStore.demoteItem(item)
+    }
 }
