@@ -20,7 +20,7 @@ class ItemStoreTest {
     }
 
     @Test
-    void 'should properly promote an item when a PromotionEvent is received'() {
+    void 'should properly promote an item'() {
         Item item = new Item(name: ITEM_NAME, price: 1.0)
         itemStore.putItem(item)
         itemStore.promoteItem(item, 0.8)
@@ -30,7 +30,7 @@ class ItemStoreTest {
     }
 
     @Test
-    void 'should properly demote an item when a DemotionEvent is received.'() {
+    void 'should properly demote an item'() {
         Item item = new Item(name: ITEM_NAME, price: 1.0)
         itemStore.putItem(item)
         itemStore.promoteItem(item, 0.8)

@@ -13,7 +13,7 @@ import java.time.Month
 /**
  * General tests for the Red Pencil Promotion kata as a whole. Nothing mocked except the date.
  */
-class KataTest {
+class KataTest extends DateMockingTest {
 
     static final String ITEM_NAME = 'item'
     static final LocalDate TODAY = LocalDate.of(2000, Month.MAY, 1)
@@ -93,12 +93,6 @@ class KataTest {
     private void promoteItem() {
         priceChanger.updatePrice(ITEM_NAME, 0.8)
         assert shoppingPortal.getItem(ITEM_NAME).promotion
-    }
-
-    private void mockTodaysDate(LocalDate date) {
-        LocalDate.metaClass.'static'.now = {->
-            date
-        }
     }
 }
 

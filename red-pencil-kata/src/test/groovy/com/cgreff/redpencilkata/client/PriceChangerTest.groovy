@@ -1,5 +1,6 @@
 package com.cgreff.redpencilkata.client
 
+import com.cgreff.redpencilkata.DateMockingTest
 import com.cgreff.redpencilkata.data.ItemStore
 import com.cgreff.redpencilkata.models.CanonicalItem
 import com.cgreff.redpencilkata.models.Item
@@ -15,7 +16,7 @@ import java.time.Month
  * Tests for the PriceChanger.
  */
 @WithGMock
-class PriceChangerTest {
+class PriceChangerTest extends DateMockingTest {
 
     private static final String ITEM_NAME = 'item'
 
@@ -26,11 +27,11 @@ class PriceChangerTest {
     void setUp() {
         mockItemStore = mock(ItemStore)
         priceChanger = new PriceChanger(mockItemStore)
-        mockTodaysDate()
+        mockTodaysDate(LocalDate.of(2000, Month.MAY, 1))
     }
 
     @Test
-    void 'should fire a demotion event when the price of a promoted item is increased'() {
+    void 'should demote an item when its price is increased'() {
         CanonicalItem item = new CanonicalItem(
                 item: new Item(name: ITEM_NAME, price: 1.0, lastModified: LocalDate.now()),
                 promotion: new Promotion(promotionPrice: 0.8, promotionFinished: LocalDate.now().plusDays(31)))
@@ -43,19 +44,13 @@ class PriceChangerTest {
     }
 
     @Test
-    void 'should fire a promotion event when the appropriate price drop occurs'() {
+    void 'should promote an item when the appropriate price drop occurs'() {
         CanonicalItem item = new CanonicalItem(item: new Item(name: ITEM_NAME, price: 1.0, lastModified: LocalDate.now().minusDays(31)))
         mockItemStore.getItem(ITEM_NAME).returns(item).once()
         mockItemStore.promoteItem(item.item, 0.8).once()
 
         play {
             priceChanger.updatePrice(ITEM_NAME, 0.8)
-        }
-    }
-
-    private void mockTodaysDate() {
-        LocalDate.metaClass.'static'.now = {->
-            LocalDate.of(2000, Month.MAY, 1)
         }
     }
 }

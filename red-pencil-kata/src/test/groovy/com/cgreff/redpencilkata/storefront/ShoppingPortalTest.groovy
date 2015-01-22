@@ -1,5 +1,6 @@
 package com.cgreff.redpencilkata.storefront
 
+import com.cgreff.redpencilkata.DateMockingTest
 import com.cgreff.redpencilkata.data.ItemStore
 import com.cgreff.redpencilkata.models.CanonicalItem
 import com.cgreff.redpencilkata.models.Item
@@ -15,7 +16,7 @@ import java.time.Month
  * Tests for the ShoppingPortal.
  */
 @WithGMock
-class ShoppingPortalTest {
+class ShoppingPortalTest extends DateMockingTest {
 
     private static final String ITEM_NAME = 'item'
 
@@ -26,7 +27,7 @@ class ShoppingPortalTest {
     void setUp() {
         mockItemStore = mock(ItemStore)
         shoppingPortal = new ShoppingPortal(mockItemStore)
-        mockTodaysDate()
+        mockTodaysDate(LocalDate.of(2000, Month.MAY, 1))
     }
 
     @Test
@@ -43,7 +44,7 @@ class ShoppingPortalTest {
     }
 
     @Test
-    void 'when a promotion has expired, should fire a demotion event'() {
+    void 'should demote an item when a promotion has expired then return it correctly'() {
         CanonicalItem item = new CanonicalItem(
                 item: new Item(name: ITEM_NAME),
                 promotion: new Promotion(promotionFinished: LocalDate.of(2000, Month.APRIL, 20)))
@@ -53,12 +54,6 @@ class ShoppingPortalTest {
 
         play {
             shoppingPortal.getItem(ITEM_NAME)
-        }
-    }
-
-    private void mockTodaysDate() {
-        LocalDate.metaClass.'static'.now = {->
-            LocalDate.of(2000, Month.MAY, 1)
         }
     }
 }
